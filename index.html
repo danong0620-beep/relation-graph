@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인간관계 좌표계</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #faf9f7; }
+.layout { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 320px; min-width: 320px; border-right: 1px solid #e0e0e0; overflow-y: auto; height: 100vh; background: #faf9f7; }
+.main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.header { padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+.header span { font-size: 10px; color: #999; margin-left: 8px; font-weight: 400; }
+.tabs { display: flex; border-bottom: 1px solid #eee; flex-shrink: 0; }
+.tab { padding: 8px 12px; font-size: 11px; cursor: pointer; border: none; background: none; color: #aaa; border-bottom: 2px solid transparent; }
+.tab.active { color: #D4537E; border-bottom-color: #D4537E; }
+.panel { display: none; padding: 12px; }
+.panel.active { display: block; }
+.field { margin-bottom: 9px; }
+.field label { display: block; font-size: 10px; color: #999; margin-bottom: 3px; }
+.field input, .field select { width: 100%; padding: 5px 7px; font-size: 11px; border: 1px solid #ddd; border-radius: 5px; background: white; color: #1a1a1a; }
+.result { background: #f2f0ec; border-radius: 5px; padding: 7px 9px; margin: 8px 0; font-size: 11px; color: #D4537E; font-family: monospace; }
+.btn-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+.btn { padding: 5px 12px; font-size: 10px; border: 1px solid #ddd; border-radius: 5px; background: white; cursor: pointer; color: #333; }
+.btn:hover { background: #f2f0ec; }
+.btn-p { color: #D4537E; border-color: rgba(212,83,126,0.4); }
+.status { font-size: 9px; color: #D4537E; margin-top: 3px; min-height: 12px; }
+.hr { border: none; border-top: 1px solid #eee; margin: 9px 0; }
+.te { background: #f2f0ec; border-radius: 5px; padding: 7px; margin-bottom: 5px; }
+.te-hd { display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-bottom: 5px; }
+.te-rm { cursor: pointer; } .te-rm:hover { color: #D4537E; }
+.te-row { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.te-row label { font-size: 9px; color: #aaa; min-width: 38px; }
+.te-row select { flex: 1; font-size: 9px; padding: 2px 4px; border: 1px solid #ddd; border-radius: 3px; }
+.sv-item { display: flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 4px; background: white; flex-wrap: wrap; }
+.sv-nm { flex: 1; font-size: 10px; min-width: 50px; }
+.sv-mt { font-size: 9px; color: #aaa; }
+.btn-xs { padding: 2px 5px; font-size: 9px; }
+.graph-hd { padding: 6px 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0; border-bottom: 1px solid #eee; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+.leg { display: flex; align-items: center; gap: 3px; font-size: 9px; cursor: pointer; padding: 2px 6px; border: 1px solid #eee; border-radius: 10px; background: white; }
+.leg:hover { border-color: #D4537E; color: #D4537E; }
+.fsel { font-size: 10px; padding: 3px 5px; border: 1px solid #ddd; border-radius: 4px; background: white; }
+.canvas-area { flex: 1; padding: 8px 10px; min-height: 0; }
+#chart { display: block; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <div class="header">인간관계 좌표계<span>origin (0,0) = 나</span></div>
+    <div class="tabs">
+      <button class="tab active" id="tab-single" onclick="switchTab('single')">좌표</button>
+      <button class="tab" id="tab-trajectory" onclick="switchTab('trajectory')">궤적</button>
+      <button class="tab" id="tab-saved" onclick="switchTab('saved')">저장</button>
+    </div>
+    <div id="panel-single" class="panel active">
+      <div class="field"><label>name</label><input type="text" id="name" placeholder="예: 0001"></div>
+      <div class="field"><label>g — 지리적 거리</label><select id="g" onchange="updateResult()">
+        <option value="20">+20 같은건물 — 언제든 마주칠 수 있는</option><option value="16">+16 같은동네 — 걸어서 갈 수 있는</option><option value="12">+12 같은구 — 버스 한 번이면 되는</option><option value="8">+8 서울권 — 지하철로 닿는</option><option value="4">+4 서울-경기</option><option value="0" selected>0 경계</option><option value="-4">-4 경기도</option><option value="-8">-8 지방대도시</option><option value="-12">-12 지방소도시</option><option value="-16">-16 국내먼지역</option><option value="-20">-20 해외</option>
+      </select></div>
+      <div class="field"><label>c — 월 만남 횟수</label><select id="c" onchange="updateResult()">
+        <option value="20">+20 매일</option><option value="16">+16 주4-5회</option><option value="12">+12 주2-3회</option><option value="8">+8 주1회</option><option value="4">+4 격주</option><option value="0" selected>0 월2회</option><option value="-4">-4 월1회</option><option value="-8">-8 분기1회</option><option value="-12">-12 반년1회</option><option value="-16">-16 1년1회</option><option value="-20">-20 거의안만남</option>
+      </select></div>
+      <div class="field"><label>f — 물리적 노력</label><select id="f" onchange="updateResult()">
+        <option value="20">+20 5분이내</option><option value="16">+16 15분</option><option value="12">+12 30분</option><option value="8">+8 45분</option><option value="4">+4 1시간</option><option value="0" selected>0 1.5시간</option><option value="-4">-4 2시간</option><option value="-8">-8 2.5시간</option><option value="-12">-12 3시간</option><option value="-16">-16 3.5시간</option><option value="-20">-20 4시간이상</option>
+      </select></div>
+      <div class="hr"></div>
+      <div class="field"><label>a — 친밀도</label><select id="a" onchange="updateResult()">
+        <option value="20">+20 — 이 사람이라면 뭐든 괜찮은</option><option value="16">+16 — 많이 편한</option><option value="12">+12 — 친한 편인</option><option value="8">+8 — 좋아하는</option><option value="4">+4 — 나쁘지 않은</option><option value="0" selected>0 — 그저 그런</option><option value="-4">-4 — 약간 불편한</option><option value="-8">-8 — 어색한</option><option value="-12">-12 — 별로인</option><option value="-16">-16 — 피하고 싶은</option><option value="-20">-20 — 함께 있기 힘든</option>
+      </select></div>
+      <div class="field"><label>d — 정서적 거리</label><select id="d" onchange="updateResult()">
+        <option value="20">+20 — 말하지 않아도 아는</option><option value="16">+16 — 솔직하게 털어놓을 수 있는</option><option value="12">+12 — 고민을 나눌 수 있는</option><option value="8">+8 — 편하게 대화되는</option><option value="4">+4 — 가벼운 대화는 되는</option><option value="0" selected>0 — 표면적인 관계</option><option value="-4">-4 — 조심스러운</option><option value="-8">-8 — 거리감이 느껴지는</option><option value="-12">-12 — 속을 모르는</option><option value="-16">-16 — 차갑게 느껴지는</option><option value="-20">-20 — 단절된</option>
+      </select></div>
+      <div class="field"><label>e — 영향도</label><select id="e" onchange="updateResult()">
+        <option value="20">20 — 내 미래를 바꾸는</option><option value="16">16 — 진로에 영향</option><option value="12">12 — 가치관에 영향</option><option value="8">8 — 취향에 영향</option><option value="4">4 — 기분에 영향</option><option value="0" selected>0 — 영향 없음</option>
+      </select></div>
+      <div class="hr"></div>
+      <div class="field"><label>만남의 성격</label>
+        <select id="meet-type" onchange="document.getElementById('pw').style.display=this.value==='planned'?'block':'none'">
+          <option value="random">무작위 만남</option><option value="planned">작위적 만남</option>
+        </select>
+      </div>
+      <div id="pw" style="display:none;" class="field"><label>장소</label>
+        <select id="place"><option value="home">집</option><option value="school">학교</option><option value="work">직장</option><option value="appointment">약속</option></select>
+      </div>
+      <div class="result" id="result-out">( X=0, Y=0 ) e=0</div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="addPoint()">+ 그래프에 추가</button>
+        <button class="btn" onclick="savePoint()">저장</button>
+      </div>
+      <p class="status" id="s-st"></p>
+    </div>
+    <div id="panel-trajectory" class="panel">
+      <div class="field"><label>name</label><input type="text" id="traj-name" placeholder="예: 0001"></div>
+      <div id="te-wrap"></div>
+      <div class="btn-row"><button class="btn" onclick="addTE()">+ 시점 추가</button></div>
+      <div class="hr"></div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="addTraj()">+ 그래프에 추가</button>
+        <button class="btn" onclick="saveTraj()">저장</button>
+        <button class="btn" onclick="resetTraj()">초기화</button>
+      </div>
+      <p class="status" id="t-st"></p>
+    </div>
+    <div id="panel-saved" class="panel">
+      <p class="status" id="sv-st"></p>
+      <div id="sv-list"></div>
+      <div class="hr"></div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="loadAll()">전체 추가</button>
+        <button class="btn" onclick="refreshSaved()">새로고침</button>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="graph-hd">
+      <div class="legend-row" id="legend"></div>
+      <select class="fsel" id="ft" onchange="applyFilter()"><option value="all">전체</option><option value="random">무작위</option><option value="planned">작위적</option></select>
+      <select class="fsel" id="fp" onchange="applyFilter()" style="display:none;"><option value="all">전체장소</option><option value="home">집</option><option value="school">학교</option><option value="work">직장</option><option value="appointment">약속</option></select>
+      <button class="btn" onclick="clearGraph()" style="font-size:9px;">초기화</button>
+    </div>
+    <div class="canvas-area" id="canvas-area">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+</div>
+<script>
+var C=['#D4537E','#7F77DD','#1D9E75','#E24B4A','#BA7517','#185FA5','#639922','#D85A30','#9B59B6','#E67E22'];
+var SK='relv5',PL={random:'무작위',home:'집',school:'학교',work:'직장',appointment:'약속'};
+var gData=[],teList=[],teCnt=0;
+var GO='<option value="20">+20 같은건물</option><option value="16">+16 같은동네</option><option value="12">+12 같은구</option><option value="8">+8 서울권</option><option value="4">+4 서울경기</option><option value="0" selected>0 경계</option><option value="-4">-4 경기도</option><option value="-8">-8 지방대</option><option value="-12">-12 지방소</option><option value="-16">-16 국내먼</option><option value="-20">-20 해외</option>';
+var CO='<option value="20">+20 매일</option><option value="16">+16 주4-5회</option><option value="12">+12 주2-3회</option><option value="8">+8 주1회</option><option value="4">+4 격주</option><option value="0" selected>0 월2회</option><option value="-4">-4 월1회</option><option value="-8">-8 분기1회</option><option value="-12">-12 반년1회</option><option value="-16">-16 1년1회</option><option value="-20">-20 거의안만남</option>';
+var FO='<option value="20">+20 5분이내</option><option value="16">+16 15분</option><option value="12">+12 30분</option><option value="8">+8 45분</option><option value="4">+4 1시간</option><option value="0" selected>0 1.5시간</option><option value="-4">-4 2시간</option><option value="-8">-8 2.5시간</option><option value="-12">-12 3시간</option><option value="-16">-16 3.5시간</option><option value="-20">-20 4시간이상</option>';
+var AO='<option value="20">+20 뭐든 괜찮은</option><option value="16">+16 많이 편한</option><option value="12">+12 친한 편</option><option value="8">+8 좋아하는</option><option value="4">+4 나쁘지 않은</option><option value="0" selected>0 그저 그런</option><option value="-4">-4 약간 불편한</option><option value="-8">-8 어색한</option><option value="-12">-12 별로인</option><option value="-16">-16 피하고 싶은</option><option value="-20">-20 힘든</option>';
+var DO='<option value="20">+20 말 안해도 아는</option><option value="16">+16 솔직하게</option><option value="12">+12 고민 나누는</option><option value="8">+8 편하게</option><option value="4">+4 가볍게</option><option value="0" selected>0 표면적</option><option value="-4">-4 조심스러운</option><option value="-8">-8 거리감</option><option value="-12">-12 속 모르는</option><option value="-16">-16 차가운</option><option value="-20">-20 단절</option>';
+var EO='<option value="20">20 미래</option><option value="16">16 진로</option><option value="12">12 가치관</option><option value="8">8 취향</option><option value="4">4 기분</option><option value="0" selected>0 없음</option>';
+
+function cx(g,c,f){return parseFloat((+f*.5+ +c*.3+ +g*.2).toFixed(2));}
+function cy(a,d){return parseFloat(((+a+ +d)/2).toFixed(2));}
+function cf(n){var h=0;for(var i=0;i<n.length;i++)h=(h<<5)-h+n.charCodeAt(i);return C[Math.abs(h)%C.length];}
+function gv(id){var e=document.getElementById(id);return e?e.value:0;}
+function ss(id,v){var e=document.getElementById(id);if(!e)return;for(var i=0;i<e.options.length;i++)if(+e.options[i].value===+v){e.options[i].selected=true;break;}}
+function updateResult(){var X=cx(gv('g'),gv('c'),gv('f')),Y=cy(gv('a'),gv('d')),e=gv('e');document.getElementById('result-out').textContent='( X='+X+', Y='+Y+' ) e='+e;}
+function la(){try{return JSON.parse(localStorage.getItem(SK)||'{}');}catch(e){return{};}}
+function ls(k,v){try{var a=la();a[k]=v;localStorage.setItem(SK,JSON.stringify(a));return true;}catch(e){return false;}}
+function lg(k){try{return la()[k]||null;}catch(e){return null;}}
+function ld(k){try{var a=la();delete a[k];localStorage.setItem(SK,JSON.stringify(a));}catch(e){}}
+function switchTab(id){['single','trajectory','saved'].forEach(function(t){document.getElementById('tab-'+t).classList.toggle('active',t===id);document.getElementById('panel-'+t).classList.toggle('active',t===id);});if(id==='saved')refreshSaved();}
+function addTE(){
+  teCnt++;var id='te'+Date.now()+'x'+Math.floor(Math.random()*9999);teList.push(id);
+  var d=document.createElement('div');d.className='te';d.id=id;
+  d.innerHTML='<div class="te-hd"><span>시점 '+teCnt+'</span><span class="te-rm" id="rm'+id+'">✕</span></div>'+
+    '<div class="te-row"><label>g</label><select id="'+id+'g">'+GO+'</select></div>'+
+    '<div class="te-row"><label>c</label><select id="'+id+'c">'+CO+'</select></div>'+
+    '<div class="te-row"><label>f</label><select id="'+id+'f">'+FO+'</select></div>'+
+    '<div class="te-row"><label>a</label><select id="'+id+'a">'+AO+'</select></div>'+
+    '<div class="te-row"><label>d</label><select id="'+id+'d">'+DO+'</select></div>'+
+    '<div class="te-row"><label>e</label><select id="'+id+'e">'+EO+'</select></div>';
+  document.getElementById('te-wrap').appendChild(d);
+  document.getElementById('rm'+id).onclick=function(){d.remove();teList=teList.filter(function(t){return t!==id;});};
+  return id;
+}
+function getRaw(){return teList.map(function(id){return{g:+gv(id+'g'),c:+gv(id+'c'),f:+gv(id+'f'),a:+gv(id+'a'),d:+gv(id+'d'),e:+gv(id+'e')};});}
+function spline(pts){
+  if(pts.length<2)return pts;
+  if(pts.length===2){var r=[];for(var k=0;k<=20;k++){var t=k/20;r.push({x:pts[0].x+(pts[1].x-pts[0].x)*t,y:pts[0].y+(pts[1].y-pts[0].y)*t});}return r;}
+  function co(vs){var n=vs.length,a=vs.slice(),b=new Array(n).fill(0),c=new Array(n).fill(0),d=new Array(n).fill(0),mu=new Array(n).fill(0),z=new Array(n).fill(0),al=[];for(var i=1;i<n-1;i++)al.push(3*(a[i+1]-a[i])-3*(a[i]-a[i-1]));for(var i=1;i<n-1;i++){var l=4-mu[i-1];mu[i]=1/l;z[i]=(al[i-1]-z[i-1])/l;}for(var j=n-2;j>=0;j--){c[j]=z[j]-mu[j]*c[j+1];b[j]=(a[j+1]-a[j])-(c[j+1]+2*c[j])/3;d[j]=(c[j+1]-c[j])/3;}return{a:a,b:b,c:c,d:d};}
+  var qx=co(pts.map(function(p){return p.x;})),qy=co(pts.map(function(p){return p.y;})),r=[];
+  for(var i=0;i<pts.length-1;i++)for(var k=0;k<=20;k++){var t=k/20;r.push({x:parseFloat((qx.a[i]+qx.b[i]*t+qx.c[i]*t*t+qx.d[i]*t*t*t).toFixed(3)),y:parseFloat((qy.a[i]+qy.b[i]*t+qy.c[i]*t*t+qy.d[i]*t*t*t).toFixed(3))});}
+  return r;
+}
+function bt(name,rp,color){var pts=rp.map(function(p){return{x:cx(p.g,p.c,p.f),y:cy(p.a,p.d)};});var ea=rp.reduce(function(s,p){return s+p.e;},0)/rp.length;return{type:'trajectory',name:name,points:spline([{x:0,y:0}].concat(pts)),controlPoints:pts,eAvg:ea,color:color,rawPts:rp};}
+function blob(bx,by,e,seed){if(e<=0)return[];var n=18,base=e*1.1,pts=[];function sr(s){var x=Math.sin(s*127.1+31.7)*43758.5453;return x-Math.floor(x);}var q=bx>=0&&by>=0?1:bx<0&&by>=0?2:bx<0&&by<0?3:4;var dirs={1:{dx:-bx,dy:-by},2:{dx:0,dy:1},3:{dx:bx>0?1:-1,dy:by>0?1:-1},4:{dx:1,dy:0}};var raw=dirs[q],dl=Math.sqrt(raw.dx*raw.dx+raw.dy*raw.dy)||1,dir={dx:raw.dx/dl,dy:raw.dy/dl},st={1:.6,2:1.5,3:1.7,4:1.5}[q];for(var i=0;i<n;i++){var ang=(i/n)*Math.PI*2,ns=sr(seed+i*7.3)*.5+sr(seed+i*13.1)*.25,px=-dir.dy,py=dir.dx,al=Math.cos(ang),pe=Math.sin(ang),rx=dir.dx*al*st+px*pe,ry=dir.dy*al*st+py*pe,rl=Math.sqrt(rx*rx+ry*ry)||1,r=base*(.6+ns*.6);pts.push({x:bx+(rx/rl)*r,y:by+(ry/rl)*r});}pts.push(pts[0]);return pts;}
+function applyFilter(){document.getElementById('fp').style.display=gv('ft')==='planned'?'inline-block':'none';draw();}
+function gf(){var ft=gv('ft'),fp=gv('fp');if(ft==='all')return gData;if(ft==='random')return gData.filter(function(d){return d.place==='random';});if(ft==='planned'){if(fp==='all')return gData.filter(function(d){return d.place&&d.place!=='random';});return gData.filter(function(d){return d.place===fp;});}return gData;}
+function addPoint(){var name=document.getElementById('name').value||'이름 없음';var mt=gv('meet-type'),place=mt==='random'?'random':gv('place');var item={type:'point',name:name,x:cx(gv('g'),gv('c'),gv('f')),y:cy(gv('a'),gv('d')),e:+gv('e'),color:cf(name),place:place};var idx=gData.findIndex(function(d){return d.name===name;});if(idx>=0)gData[idx]=item;else gData.push(item);draw();}
+function addTraj(){var name=document.getElementById('traj-name').value||'이름 없음';if(teList.length<2){document.getElementById('t-st').textContent='시점을 2개 이상 추가해줘.';return;}var item=bt(name,getRaw(),cf(name));var idx=gData.findIndex(function(d){return d.name===name;});if(idx>=0)gData[idx]=item;else gData.push(item);document.getElementById('t-st').textContent='"'+name+'" 추가됐어.';draw();}
+function resetTraj(){document.getElementById('traj-name').value='';document.getElementById('te-wrap').innerHTML='';teList=[];teCnt=0;document.getElementById('t-st').textContent='';addTE();addTE();addTE();}
+function savePoint(){var name=document.getElementById('name').value.trim();if(!name){document.getElementById('s-st').textContent='이름을 입력해줘.';return;}var mt=gv('meet-type');ls(name,{type:'point',name:name,g:+gv('g'),c:+gv('c'),f:+gv('f'),a:+gv('a'),d:+gv('d'),e:+gv('e'),place:mt==='random'?'random':gv('place'),savedAt:Date.now()});document.getElementById('s-st').textContent='"'+name+'" 저장됐어.';}
+function saveTraj(){var name=document.getElementById('traj-name').value.trim();if(!name||teList.length<2){document.getElementById('t-st').textContent='이름과 시점을 입력해줘.';return;}ls(name,{type:'trajectory',name:name,rawPts:getRaw(),savedAt:Date.now()});document.getElementById('t-st').textContent='"'+name+'" 저장됐어.';}
+function refreshSaved(){var all=la(),keys=Object.keys(all),el=document.getElementById('sv-list'),st=document.getElementById('sv-st');el.innerHTML='';if(keys.length===0){st.textContent='저장된 데이터가 없어.';return;}st.textContent='총 '+keys.length+'개';keys.forEach(function(name){var data=all[name];var div=document.createElement('div');div.className='sv-item';var tl=data.type==='point'?'좌표':'궤적';var pl=data.place?' · '+(PL[data.place]||data.place):'';var dt=data.savedAt?new Date(data.savedAt).toLocaleDateString('ko-KR'):'';var nm=document.createElement('span');nm.className='sv-nm';nm.textContent=name;var mt=document.createElement('span');mt.className='sv-mt';mt.textContent=tl+pl+' '+dt;var b1=document.createElement('button');b1.className='btn btn-xs btn-p';b1.textContent='단독';b1.onclick=(function(n){return function(){lo(n);};})(name);var b2=document.createElement('button');b2.className='btn btn-xs';b2.textContent='추가';b2.onclick=(function(n){return function(){lone(n);};})(name);var b3=document.createElement('button');b3.className='btn btn-xs';b3.textContent='삭제';b3.style.color='#aaa';b3.onclick=(function(n,dv){return function(){ld(n);dv.remove();};})(name,div);div.appendChild(nm);div.appendChild(mt);div.appendChild(b1);div.appendChild(b2);div.appendChild(b3);el.appendChild(div);});}
+function lone(name){var data=lg(name);if(!data)return;var color=cf(name),item;if(data.type==='point')item={type:'point',name:name,x:cx(data.g,data.c,data.f),y:cy(data.a,data.d),e:data.e,color:color,place:data.place||'random'};else item=bt(name,data.rawPts,color);var idx=gData.findIndex(function(d){return d.name===name;});if(idx>=0)gData[idx]=item;else gData.push(item);draw();}
+function lo(name){gData=[];lone(name);}
+function loadAll(){var all=la();Object.keys(all).forEach(function(k){lone(k);});}
+function clearGraph(){gData=[];draw();document.getElementById('legend').innerHTML='';}
+
+function draw(){
+  var canvas=document.getElementById('chart'),area=document.getElementById('canvas-area');
+  var W=area.clientWidth,H=area.clientHeight;
+  if(!W||!H)return;
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  var ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  var pl=40,pr=15,pt=15,pb=30,cw=W-pl-pr,ch=H-pt-pb,mn=-22,mx=22,rng=44;
+  function tx(v){return pl+((v-mn)/rng)*cw;}function ty(v){return pt+((mx-v)/rng)*ch;}
+  ctx.fillStyle='#ffffff';ctx.fillRect(pl,pt,cw,ch);
+  ctx.strokeStyle='#ceefe8';ctx.lineWidth=0.8;
+  for(var v=-20;v<=20;v+=4){ctx.beginPath();ctx.moveTo(tx(v),pt);ctx.lineTo(tx(v),pt+ch);ctx.stroke();ctx.beginPath();ctx.moveTo(pl,ty(v));ctx.lineTo(pl+cw,ty(v));ctx.stroke();}
+  ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx(0),pt);ctx.lineTo(tx(0),pt+ch);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pl,ty(0));ctx.lineTo(pl+cw,ty(0));ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,0.12)';ctx.font='9px monospace';ctx.textAlign='left';
+  ctx.fillText('-+',pl+3,pt+11);ctx.fillText('++',tx(0)+3,pt+11);ctx.fillText('--',pl+3,ty(0)+11);ctx.fillText('+-',tx(0)+3,ty(0)+11);
+  ctx.fillStyle='#bbb';ctx.textAlign='center';ctx.font='9px monospace';
+  ctx.fillText('물리적 거리 (X)',pl+cw/2,H-4);
+  var legEl=document.getElementById('legend');legEl.innerHTML='';
+  var filtered=gf();
+  filtered.forEach(function(item){
+    var li=document.createElement('div');li.className='leg';li.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:'+item.color+';display:inline-block;"></span>'+item.name;
+    li.onclick=(function(n){return function(){gData=gData.filter(function(d){return d.name!==n;});draw();};})(item.name);legEl.appendChild(li);
+    var seed=item.name.split('').reduce(function(s,ch){return s+ch.charCodeAt(0);},0);
+    if(item.type==='point'){
+      if(item.e>0){var bp=blob(item.x,item.y,item.e,seed);if(bp.length>2){ctx.beginPath();ctx.moveTo(tx(bp[0].x),ty(bp[0].y));for(var i=1;i<bp.length;i++)ctx.lineTo(tx(bp[i].x),ty(bp[i].y));ctx.closePath();ctx.fillStyle='rgba(199,154,188,0.15)';ctx.fill();}}
+      ctx.setLineDash([3,3]);ctx.strokeStyle=item.color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(tx(0),ty(0));ctx.lineTo(tx(item.x),ty(item.y));ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=item.color;ctx.beginPath();ctx.arc(tx(item.x),ty(item.y),5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle=item.color;ctx.font='9px monospace';ctx.textAlign='left';ctx.fillText(item.name,tx(item.x)+7,ty(item.y)+3);
+    } else {
+      if(item.points.length>0){ctx.beginPath();ctx.moveTo(tx(0),ty(0));item.points.forEach(function(p){ctx.lineTo(tx(p.x),ty(p.y));});ctx.closePath();ctx.fillStyle='rgba(199,154,188,0.15)';ctx.fill();}
+      item.controlPoints.forEach(function(pt,i){var s2=seed+i*31,ep=item.rawPts&&item.rawPts[i]?item.rawPts[i].e:item.eAvg;if(ep>0){var bp=blob(pt.x,pt.y,ep,s2);if(bp.length>2){ctx.beginPath();ctx.moveTo(tx(bp[0].x),ty(bp[0].y));for(var j=1;j<bp.length;j++)ctx.lineTo(tx(bp[j].x),ty(bp[j].y));ctx.closePath();ctx.fillStyle='rgba(199,154,188,0.15)';ctx.fill();}}});
+      ctx.setLineDash([]);ctx.strokeStyle=item.color;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(tx(item.points[0].x),ty(item.points[0].y));item.points.forEach(function(p){ctx.lineTo(tx(p.x),ty(p.y));});ctx.stroke();
+      item.controlPoints.forEach(function(pt){ctx.fillStyle=item.color+'bb';ctx.beginPath();ctx.arc(tx(pt.x),ty(pt.y),4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='white';ctx.lineWidth=1;ctx.stroke();});
+      if(item.controlPoints.length>0){var lp=item.controlPoints[item.controlPoints.length-1];ctx.fillStyle=item.color;ctx.font='9px monospace';ctx.textAlign='left';ctx.fillText(item.name,tx(lp.x)+7,ty(lp.y)+3);}
+    }
+  });
+  ctx.setLineDash([]);ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.arc(tx(0),ty(0),6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#1a1a1a';ctx.font='bold 9px monospace';ctx.textAlign='left';ctx.fillText('나',tx(0)+8,ty(0)+3);ctx.textAlign='left';
+}
+
+var lt=null;
+window.addEventListener('load',function(){
+  updateResult();resetTraj();draw();
+  window.addEventListener('resize',draw);
+  document.getElementById('name').addEventListener('input',function(){var v=this.value.trim();clearTimeout(lt);lt=setTimeout(function(){var data=lg(v);if(!data||data.type!=='point')return;['g','c','f','a','d','e'].forEach(function(k){ss(k,data[k]);});updateResult();document.getElementById('s-st').textContent='"'+v+'" 불러왔어.';},600);});
+  document.getElementById('traj-name').addEventListener('input',function(){var v=this.value.trim();clearTimeout(lt);lt=setTimeout(function(){var data=lg(v);if(!data||data.type!=='trajectory')return;document.getElementById('te-wrap').innerHTML='';teList=[];teCnt=0;data.rawPts.forEach(function(pt){var id=addTE();['g','c','f','a','d','e'].forEach(function(k){ss(id+k,pt[k]);});});document.getElementById('t-st').textContent='"'+v+'" 불러왔어.';},600);});
+});
+</script>
+</body>
+</html>
